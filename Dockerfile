@@ -14,7 +14,7 @@ RUN npm install
 COPY ./chess-web/chessboardjs ./chessboardjs
 
 # Copy the entire chess.js folder (if needed for app logic)
-COPY ./chess.js ./chess.js
+COPY ./chessai.js ./chessai.js
 
 # Copy server.js and index.html from chessboardjs
 COPY ./chess-web/server.js ./server.jsdo
