@@ -19,7 +19,7 @@ resource "aws_lb_target_group" "cg_app_lb_tg" {
   target_type = "ip"
   port        = 3002
   protocol    = "HTTP"
-  vpc_id      = module.vpc.vpc_id
+  vpc_id      = var.vpc_id
 }
 
 ## My ALB listener for HTTP redirecting to port 443

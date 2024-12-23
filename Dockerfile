@@ -5,13 +5,13 @@ FROM node:18-alpine
 WORKDIR /app
 
 # Copy package.json and package-lock.json from chessboardjs
-COPY ./chess-web/chessboardjs/package*.json ./
+COPY ./chess-web/chessboardai/package*.json ./
 
 # Install dependencies
 RUN npm install
 
 # Copy the entire chessboardjs folder
-COPY ./chess-web/chessboardjs ./chessboardjs
+COPY ./chess-web/chessboardai ./chessboardai
 
 # Copy the entire chess.js folder (if needed for app logic)
 COPY ./chessai.js ./chessai.js

@@ -4,7 +4,7 @@
 module "vpc" {
   source              = "./modules/vpc"
   vpc_cidr            = "10.0.0.0/16"
-  vpc_name            = "tm-vpc"
+  vpc_name            = "cg-vpc"
   public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
   availability_zones  = ["us-east-1a", "us-east-1b"]
 }
@@ -18,20 +18,20 @@ module "security_group" {
 module "alb" {
   source            = "./modules/alb"
   alb_name          = "cg-app-alb"
-  security_group_id = module.security_group.security_group_ids
+  security_group_id = module.security_group.sg_id
   subnet_ids        = module.vpc.public_subnets
   target_group_name = "cg-target-group"
   target_port       = 3002
   vpc_id            = module.vpc.vpc_id
-  certificate_arn   = "arn:aws:acm:us-east-1:713881828888:certificate/be1c87f5-68d8-4ae2-89ea-8caf27640c8c"
+  certificate_arn   = "arn:aws:acm:us-east-1:713881828888:certificate/2c9a27e7-a2dd-4a9b-bf4d-f31c8ca34ef9"
 }
 
 module "ecs" {
   source             = "./modules/ecs"
   cluster_name       = "cg-ecs-cluster"
   task_family        = "cg-task"
-  task_cpu           = "1024"
-  task_memory        = "3072"
+  task_cpu           = "2048"
+  task_memory        = "6144"
   container_name     = "cg-container"
   container_image    = "713881828888.dkr.ecr.us-east-1.amazonaws.com/chess-game"
   container_port     = 3002
@@ -44,7 +44,7 @@ module "ecs" {
   listener_https_arn = module.alb.https_listener
 
   create_iam_role    = false
-  execution_role_arn = "arn:aws:iam::767398132018:role/ecsTaskExecutionRole"
-  task_role_arn      = "arn:aws:iam::767398132018:role/ecsTaskExecutionRole"
+  execution_role_arn = "arn:aws:iam::713881828888:role/ecs-task-execution-role"
+  task_role_arn      = "arn:aws:iam::713881828888:role/ecs-task-execution-role"
   iam_role_name      = "ecsTaskExecutionRole"
 }

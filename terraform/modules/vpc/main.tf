@@ -53,14 +53,14 @@ resource "aws_route_table" "cg_rt" {
 
 ## My route table association
 resource "aws_route_table_association" "cg_subnet_rt_assoc" {
-  count = length(aws_subnet.cg_public_sn)
+  count = length(aws_subnet.cg_public_sn[*].id)
   subnet_id      = aws_subnet.cg_public_sn[count.index].id
   route_table_id = aws_route_table.cg_rt.id
 }
 
 ## My ACM certificate
 resource "aws_acm_certificate" "cert" {
-  domain_name       = "ecs.habibur-rahman.com"  
+  domain_name       = "cgai.habibur-rahman.com"  
   validation_method = "DNS"                      
   tags = {
     Name = "ecs-cert"

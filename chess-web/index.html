@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chess Game</title>
     <!-- Include Chessboard.js CSS -->
-    <link rel="stylesheet" href="chessboardjs/dist/chessboard-1.0.0.min.css">
+    <link rel="stylesheet" href="chessboardai/dist/chessboard-1.0.0.min.css">
     <!-- Include jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Include Chessboard.js -->
-    <script src="chessboardjs/dist/chessboard-1.0.0.min.js"></script>
+    <script src="chessboardai/dist/chessboard-1.0.0.min.js"></script>
     <!-- Include Chess.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.min.js"></script>
 </head>
@@ -28,7 +28,7 @@
             const board = Chessboard('board', {
                 position: 'start',
                 draggable: true,
-                pieceTheme: 'chessboardjs/website/img/chesspieces/wikipedia/{piece}.png',
+                pieceTheme: 'chessboardai/website/img/chesspieces/wikipedia/{piece}.png',
                 onDrop: (source, target) => {
                     // Handle player's move
                     const move = game.move({ from: source, to: target });

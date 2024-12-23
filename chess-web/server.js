@@ -5,7 +5,7 @@ const app = express();
 const port = 3002;
 
 // Serve the chessboardjs directory, including images
-app.use('/chessboardjs', express.static(path.join(__dirname, 'chessboardjs')));
+app.use('/chessboardai', express.static(path.join(__dirname, 'chessboardai')));
 
 // Serve the index.html file
 app.get('/', (req, res) => {

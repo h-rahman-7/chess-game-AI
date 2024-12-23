@@ -5,7 +5,7 @@ output "vpc_id" {
 
 output "public_subnets" {
   description = "The IDs of the public subnets"
-  value       = aws_subnet.cg_public_subnet[*].id
+  value       = aws_subnet.cg_public_sn[*].id
 }
 
 output "internet_gateway_id" {
