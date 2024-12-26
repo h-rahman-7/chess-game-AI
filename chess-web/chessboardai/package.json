@@ -13,7 +13,8 @@
     "dist/"
   ],
   "dependencies": {
-    "jquery": ">=3.4.1"
+    "jquery": ">=3.4.1",
+    "express": "^4.21.2"
   },
   "devDependencies": {
     "csso": "3.5.1",

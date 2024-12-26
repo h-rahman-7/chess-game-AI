@@ -17,7 +17,7 @@ COPY ./chess-web/chessboardai ./chessboardai
 COPY ./chessai.js ./chessai.js
 
 # Copy server.js and index.html from chessboardjs
-COPY ./chess-web/server.js ./server.jsdo
+COPY ./chess-web/server.js ./server.js
 COPY ./chess-web/index.html ./index.html
 
 # Expose the port

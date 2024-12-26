@@ -32,8 +32,10 @@ module "ecs" {
   task_family        = "cg-task"
   task_cpu           = "2048"
   task_memory        = "6144"
+  repository_name    = "chess-game" # Name of your ECR repository
+  #image_tag          = "latest"    # Optional, defaults to "latest"
   container_name     = "cg-container"
-  container_image    = "713881828888.dkr.ecr.us-east-1.amazonaws.com/chess-game"
+  container_image    = "713881828888.dkr.ecr.us-east-1.amazonaws.com/chess-game:latest"
   container_port     = 3002
   service_name       = "my-cg-service"
   desired_count      = 1

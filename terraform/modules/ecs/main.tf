@@ -8,6 +8,15 @@ resource "aws_ecs_cluster" "cg_ecs_cluster" {
   }
 }
 
+data "aws_ecr_repository" "repo" {
+  name = var.repository_name
+}
+
+data "aws_ecr_image" "latest_image" {
+  repository_name = data.aws_ecr_repository.repo.name
+  image_tag       = var.image_tag
+}
+
 ## My ECS task definition
 resource "aws_ecs_task_definition" "cg_app_td" {
   family                   = var.task_family
@@ -21,7 +30,7 @@ resource "aws_ecs_task_definition" "cg_app_td" {
   container_definitions = jsonencode([
     {
       name      = var.container_name
-      image     = var.container_image
+      image     = data.aws_ecr_image.latest_image.image_uri # Dynamically fetched image
       cpu       = 0
       essential = true
       portMappings = [{

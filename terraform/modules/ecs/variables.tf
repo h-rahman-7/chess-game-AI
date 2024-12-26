@@ -88,3 +88,14 @@ variable "create_iam_role" {
   type        = bool
   default     = true
 }
+
+variable "repository_name" {
+  type        = string
+  description = "Name of the ECR repository"
+}
+
+variable "image_tag" {
+  type        = string
+  description = "Tag of the container image"
+  default     = "latest" # Default to the latest tag
+}
