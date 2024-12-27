@@ -46,9 +46,16 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:latest" >> $GITHUB_ENV
 
-      - name: Notify Discord
+      - name: Notify Discord on Success
         if: success()
         run: |
           curl -H "Content-Type: application/json" \
                -d "{\"content\": \"✅ Docker image built and pushed successfully!\"}" \
+               ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+      - name: Notify Discord on Failure
+        if: failure()
+        run: |
+          curl -H "Content-Type: application/json" \
+               -d "{\"content\": \"❌ Docker image build or push failed. Please check the logs for details.\"}" \
                ${{ secrets.DISCORD_WEBHOOK_URL }}

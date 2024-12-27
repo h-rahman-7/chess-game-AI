@@ -56,9 +56,16 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Notify Discord
+      - name: Notify Discord on Success
         if: success()
         run: |
           curl -H "Content-Type: application/json" \
                -d "{\"content\": \"✅ Terraform deployment completed successfully!\"}" \
+               ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+      - name: Notify Discord on Failure
+        if: failure()
+        run: |
+          curl -H "Content-Type: application/json" \
+               -d "{\"content\": \"❌ Terraform deployment failed. Please check the logs for details.\"}" \
                ${{ secrets.DISCORD_WEBHOOK_URL }}
