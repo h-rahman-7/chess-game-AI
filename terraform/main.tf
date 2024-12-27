@@ -50,3 +50,11 @@ module "ecs" {
   task_role_arn      = "arn:aws:iam::713881828888:role/ecs-task-execution-role"
   iam_role_name      = "ecsTaskExecutionRole"
 }
+
+module "route53" {
+  source       = "./modules/route53"
+  zone_name    = "habibur-rahman.com"
+  record_name  = "cgai.habibur-rahman.com"
+  ttl          = 300
+  alb_dns_name = module.alb.alb_dns_name
+}

@@ -1,0 +1,64 @@
+name: Terraform Deployment Workflow
+
+on:
+  # Trigger workflow automatically on changes to the main branch
+  push:
+    branches:
+      - main
+
+  # Trigger workflow manually using GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type "yes" to confirm deployment'
+        required: true
+        default: 'no'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: 'us-east-1'
+
+jobs:
+  terraform_apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: terraform
+        run: terraform plan -out=tfplan
+
+      # Require confirmation for manual runs
+      - name: Check Confirmation
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          if [ "${{ github.event.inputs.confirmation }}" != "yes" ]; then
+            echo "Confirmation not given. Exiting..."
+            exit 1
+          fi
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve tfplan
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Notify Discord
+        if: success()
+        run: |
+          curl -H "Content-Type: application/json" \
+               -d "{\"content\": \"✅ Terraform deployment completed successfully!\"}" \
+               ${{ secrets.DISCORD_WEBHOOK_URL }}
