@@ -1,12 +1,9 @@
 name: Terraform Deployment Workflow
 
 on:
-  # Trigger workflow automatically on changes to the main branch
   push:
     branches:
       - main
-
-  # Trigger workflow manually using GitHub Actions UI
   workflow_dispatch:
     inputs:
       confirmation:
@@ -29,27 +26,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout Repository
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      # Step 2: Install Terraform
       - name: Install Terraform
         run: |
-          sudo apt-get update -y
-          sudo apt-get install -y wget unzip
-          wget https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
-          unzip -o terraform_1.6.0_linux_amd64.zip
-          sudo mv terraform /usr/local/bin/
-            
+          mkdir -p /tmp/terraform_install
+          wget https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip -O /tmp/terraform.zip
+          unzip -o /tmp/terraform.zip -d /tmp/terraform_install
+          sudo mv /tmp/terraform_install/terraform /usr/local/bin/
+        shell: bash
 
+      # Step 3: Terraform Init
       - name: Terraform Init
         working-directory: terraform
         run: terraform init
 
+      # Step 4: Terraform Plan
       - name: Terraform Plan
         working-directory: terraform
         run: terraform plan -out=tfplan
 
-      # Require confirmation for manual runs
+      # Step 5: Check Confirmation
       - name: Check Confirmation
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
@@ -58,6 +58,7 @@ jobs:
             exit 1
           fi
 
+      # Step 6: Terraform Apply
       - name: Terraform Apply
         working-directory: terraform
         run: terraform apply -auto-approve tfplan
@@ -65,16 +66,18 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Notify Discord on Success
+      # Step 7: Notify Discord on Success
+      - name: Notify Discord Success
         if: success()
         run: |
           curl -H "Content-Type: application/json" \
                -d "{\"content\": \"✅ Terraform deployment completed successfully!\"}" \
                ${{ secrets.DISCORD_WEBHOOK_URL }}
 
-      - name: Notify Discord on Failure
+      # Step 8: Notify Discord on Failure
+      - name: Notify Discord Failure
         if: failure()
         run: |
           curl -H "Content-Type: application/json" \
-               -d "{\"content\": \"❌ Terraform deployment failed. Please check the logs for details.\"}" \
+               -d "{\"content\": \"❌ Terraform deployment failed! Please check the logs.\"}" \
                ${{ secrets.DISCORD_WEBHOOK_URL }}
