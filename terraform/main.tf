@@ -52,7 +52,7 @@ module "ecs" {
 }
 
 module "route53" {
-  source = "/c/CoderCo/chess-game-ai/terraform/modules/route53"
+  source = "./modules/Route53"
   zone_name    = "habibur-rahman.com"
   record_name  = "cgai.habibur-rahman.com"
   ttl          = 300
