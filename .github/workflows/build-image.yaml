@@ -2,9 +2,9 @@ name: Build and Push Docker Image
 
 on:
   # Trigger workflow automatically on changes to the main branch
-#   push:
-#     branches:
-#       - main
+  push:
+    branches:
+      - main
 
   # Trigger workflow manually using GitHub Actions UI
   workflow_dispatch:
