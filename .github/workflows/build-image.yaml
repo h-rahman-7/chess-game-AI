@@ -1,44 +1,26 @@
 name: Build and Push Docker Image with Security Checks
 
 on:
-  # Trigger workflow automatically on changes to the main branch
   push:
     branches:
       - main
-
-  # Trigger workflow manually using GitHub Actions UI
   workflow_dispatch:
 
 env:
-  AWS_REGION: us-east-1  
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: 713881828888.dkr.ecr.us-east-1.amazonaws.com
+  ECR_REPOSITORY: chess-game
 
 jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout Code
       - name: Checkout Code
-        uses: actions/checkout@v3  # Checks out your repository code
+        uses: actions/checkout@v3
 
-      # Step 2: Set up QEMU
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-
-      # Step 3: Set up Buildx
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v2
 
-      # Step 4: Run Trivy for Vulnerability Scanning
-      - name: Run Trivy for Vulnerability Scanning
-        env:
-         ECR_REGISTRY: 713881828888.dkr.ecr.us-east-1.amazonaws.com
-         ECR_REPOSITORY: chess-game
-        run: |
-         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -
-         ./bin/trivy image --severity HIGH,CRITICAL $ECR_REGISTRY/$ECR_REPOSITORY:latest
-    
-
-      # Step 5: Configure AWS Credentials
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -46,23 +28,27 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # Step 6: Log in to Amazon ECR
       - name: Log in to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      # Step 7: Build, Tag, and Push Docker Image
-      - name: Build, Tag, and Push Docker Image
-        id: build-image
+      - name: Build and Push Docker Image
         env:
-          ECR_REGISTRY: 713881828888.dkr.ecr.us-east-1.amazonaws.com
-          ECR_REPOSITORY: chess-game 
+          ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
+          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:latest" >> $GITHUB_ENV
 
-      # Step 8: Notify Discord on Success
+      - name: Pull Docker Image
+        run: |
+          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Run Trivy for Vulnerability Scanning
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -
+          ./bin/trivy image --severity HIGH,CRITICAL $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
       - name: Notify Discord on Success
         if: success()
         run: |
@@ -70,7 +56,6 @@ jobs:
                -d "{\"content\": \"✅ Docker image built and pushed successfully!\"}" \
                ${{ secrets.DISCORD_WEBHOOK_URL }}
 
-      # Step 9: Notify Discord on Failure
       - name: Notify Discord on Failure
         if: failure()
         run: |
