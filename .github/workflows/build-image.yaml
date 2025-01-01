@@ -29,10 +29,11 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       # Step 4: Run Trivy for Vulnerability Scanning
-      - name: Run Trivy
+      - name: Run Trivy for Vulnerability Scanning
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -
-          ./trivy image --severity HIGH,CRITICAL $ECR_REGISTRY/$ECR_REPOSITORY:latest
+         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -
+         export PATH=$PATH:./bin
+         trivy image --severity HIGH,CRITICAL $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       # Step 5: Configure AWS Credentials
       - name: Configure AWS Credentials
