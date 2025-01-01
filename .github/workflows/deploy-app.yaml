@@ -1,6 +1,9 @@
 name: Terraform Deployment Workflow
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       confirmation:
@@ -64,7 +67,7 @@ jobs:
         working-directory: terraform
         run: terraform plan -out=tfplan
 
-      # Step 8: Check Confirmation
+      # Step 8: Check Confirmation (Only for Manual Runs)
       - name: Check Confirmation
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
