@@ -3,7 +3,7 @@
 ## Overview
 This document outlines the architecture for the Chess Game application deployed on AWS ECS. The application leverages modern cloud infrastructure to ensure scalability, security, and high availability.
 
-## Architecture Diagram
+## ECS Architecture Diagram
 ![alt.text](./ECS-architecture-diagram.png)
 
 
