@@ -67,4 +67,37 @@ resource "aws_acm_certificate" "cert" {
   }
 }
 
+# This resource modifies the default security group created by AWS for the VPC.
+# The default security group allows all inbound traffic within the VPC, which is a security risk.
+# By restricting inbound traffic (ingress) and allowing only outbound traffic (egress),
+# we ensure the default security group adheres to security best practices.
+# This is required to pass Checkov's CKV2_AWS_12 policy check.
+
+resource "aws_default_security_group" "restrict_default_sg" {
+  vpc_id = module.vpc.vpc_id
+
+  # Restrict all inbound traffic
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = []  # Blocks all inbound traffic
+    description = "Block all inbound traffic"
+  }
+
+  # Allow all outbound traffic
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]  # Allows all outbound traffic
+    description = "Allow all outbound traffic"
+  }
+
+  # Add a descriptive tag for better visibility
+  tags = {
+    Name = "${module.vpc.vpc_name}-default-sg"
+  }
+}
+
 
