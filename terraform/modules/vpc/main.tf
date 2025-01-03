@@ -74,7 +74,7 @@ resource "aws_acm_certificate" "cert" {
 # This is required to pass Checkov's CKV2_AWS_12 policy check.
 
 resource "aws_default_security_group" "restrict_default_sg" {
-  vpc_id = module.vpc.vpc_id
+  vpc_id = aws_vpc.cg_vpc.id  # Reference the correct VPC resource
 
   # Restrict all inbound traffic
   ingress {
@@ -96,8 +96,6 @@ resource "aws_default_security_group" "restrict_default_sg" {
 
   # Add a descriptive tag for better visibility
   tags = {
-    Name = "${module.vpc.vpc_name}-default-sg"
+    Name = "${var.vpc_name}-default-sg"
   }
 }
-
-
