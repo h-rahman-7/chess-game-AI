@@ -56,6 +56,8 @@ resource "aws_lb_listener" "cg_https_listener" {
   protocol          = "HTTPS"
   certificate_arn   = var.certificate_arn
  
+ ssl_policy = "ELBSecurityPolicy-TLS-1-2-2017-01" # Enforce TLS 1.2
+
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.cg_app_lb_tg.arn
