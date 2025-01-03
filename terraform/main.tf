@@ -1,6 +1,7 @@
 # This module (row 4) includes the configuration setup for my VPC, subnets (public & private), IGW and routing info
 # The additional rows allow dynamic/flexible collobaration - i.e. colleague may want to use diff sandbox configurations
 
+# VPC Module
 module "vpc" {
   source              = "./modules/vpc"
   vpc_cidr            = "10.0.0.0/16"
@@ -9,12 +10,50 @@ module "vpc" {
   availability_zones  = ["us-east-1a", "us-east-1b"]
 }
 
+resource "aws_flow_log" "vpc_flow_logs" {
+  vpc_id                 = module.vpc.vpc_id
+  traffic_type           = "ALL"
+  log_destination        = aws_cloudwatch_log_group.flow_logs.arn
+  log_destination_type   = "cloud-watch-logs"
+  iam_role_arn           = aws_iam_role.flow_logs_role.arn
+}
+
+resource "aws_cloudwatch_log_group" "flow_logs" {
+  name              = "/aws/vpc/flow-logs"
+  retention_in_days = 90
+}
+
+resource "aws_iam_role" "flow_logs_role" {
+  name = "vpc-flow-logs-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "vpc-flow-logs.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy_attachment" "flow_logs_policy" {
+  name       = "flow-logs-policy-attach"
+  roles      = [aws_iam_role.flow_logs_role.name]
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2FlowLogsRole"
+}
+
+# Security Group Module
 module "security_group" {
   source  = "./modules/security-group"
   sg_name = "cg-ecs-sg"
   vpc_id  = module.vpc.vpc_id
 }
 
+# ALB Module
 module "alb" {
   source            = "./modules/alb"
   alb_name          = "cg-app-alb"
@@ -26,14 +65,14 @@ module "alb" {
   certificate_arn   = "arn:aws:acm:us-east-1:713881828888:certificate/2c9a27e7-a2dd-4a9b-bf4d-f31c8ca34ef9"
 }
 
+# ECS Module
 module "ecs" {
   source             = "./modules/ecs"
   cluster_name       = "cg-ecs-cluster"
   task_family        = "cg-task"
   task_cpu           = "2048"
   task_memory        = "6144"
-  repository_name    = "chess-game" # Name of your ECR repository
-  #image_tag          = "latest"    # Optional, defaults to "latest"
+  repository_name    = "chess-game"
   container_name     = "cg-container"
   container_image    = "713881828888.dkr.ecr.us-east-1.amazonaws.com/chess-game:latest"
   container_port     = 3002
@@ -51,10 +90,53 @@ module "ecs" {
   iam_role_name      = "ecsTaskExecutionRole"
 }
 
+# WAF Configuration
+resource "aws_wafv2_web_acl" "cgai_waf" {
+  name        = "cgai-waf"
+  scope       = "REGIONAL" # For ALB
+  description = "WAF for ALB"
+
+  default_action {
+    allow {}
+  }
+
+  rule {
+    name     = "block-bad-requests"
+    priority = 1
+    action {
+      block {}
+    }
+    statement {
+      managed_rule_group_statement {
+        vendor_name = "AWS"
+        name        = "AWSManagedRulesCommonRuleSet"
+      }
+    }
+    visibility_config {
+      sampled_requests_enabled    = true
+      cloudwatch_metrics_enabled  = true
+      metric_name                 = "blockBadRequests"
+    }
+  }
+
+  visibility_config {
+    cloudwatch_metrics_enabled = true
+    metric_name                = "webACL"
+    sampled_requests_enabled   = true
+  }
+}
+
+# Associate WAF with ALB
+resource "aws_wafv2_web_acl_association" "cgai_waf_association" {
+  resource_arn = module.alb.alb_arn # Replace with the ALB ARN output from your module
+  web_acl_arn  = aws_wafv2_web_acl.cgai_waf.arn
+}
+
+# Route53 Module
 module "route53" {
-  source = "./modules/Route53"
-  zone_name    = "habibur-rahman.com"
-  record_name  = "cgai.habibur-rahman.com"
-  ttl          = 300
+  source      = "./modules/Route53"
+  zone_name   = "habibur-rahman.com"
+  record_name = "cgai.habibur-rahman.com"
+  ttl         = 300
   alb_dns_name = module.alb.alb_dns_name
 }

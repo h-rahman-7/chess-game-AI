@@ -11,6 +11,12 @@ resource "aws_lb" "cg_app_lb" {
   tags = {
     Environment = "production"
   }
+
+  access_logs {
+    bucket  = "chess-game-terraform-state"
+    prefix  = "alb-logs"
+    enabled = true
+  }
 }
 
 ## My ALB target group
