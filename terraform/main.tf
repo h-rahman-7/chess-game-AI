@@ -50,7 +50,7 @@ EOT
 resource "aws_cloudwatch_log_group" "flow_logs" {
   name              = "/aws/vpc/flow-logs"
   kms_key_id = aws_kms_key.chess_app_key.id
-  retention_in_days = 90
+  retention_in_days = 365
 }
 
 resource "aws_iam_role" "flow_logs_role" {
