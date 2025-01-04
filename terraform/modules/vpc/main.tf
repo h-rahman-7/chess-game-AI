@@ -81,7 +81,7 @@ resource "aws_default_security_group" "restrict_default_sg" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = []  # Blocks all inbound traffic
+    cidr_blocks = ["10.0.0.0/16"]  # Blocks all inbound traffic
     description = "Block all inbound traffic"
   }
 
