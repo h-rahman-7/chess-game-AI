@@ -1,11 +1,12 @@
 name: Build and Push Docker Image with Security Checks
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-
+    workflow_dispatch:
+      inputs:
+        confirmation:
+          description: 'Type "yes" to confirm deployment'
+          required: true
+          default: 'no'
 env:
   AWS_REGION: us-east-1
   ECR_REGISTRY: 713881828888.dkr.ecr.us-east-1.amazonaws.com

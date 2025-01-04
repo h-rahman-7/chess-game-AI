@@ -124,12 +124,13 @@ module "ecs" {
 resource "aws_wafv2_web_acl" "cgai_waf" {
   name        = "cgai-waf"
   scope       = "REGIONAL" # For ALB
-  description = "WAF for ALB"
+  description = "WAF for ALB with Log4j2 protection"
 
   default_action {
     allow {}
   }
 
+  # Block bad requests using common rule set
   rule {
     name     = "block-bad-requests"
     priority = 1
@@ -146,6 +147,26 @@ resource "aws_wafv2_web_acl" "cgai_waf" {
       sampled_requests_enabled    = true
       cloudwatch_metrics_enabled  = true
       metric_name                 = "blockBadRequests"
+    }
+  }
+
+  # Add protection against Log4j2
+  rule {
+    name     = "block-log4j2-exploit"
+    priority = 2
+    action {
+      block {}
+    }
+    statement {
+      managed_rule_group_statement {
+        vendor_name = "AWS"
+        name        = "AWSManagedRulesKnownBadInputsRuleSet"
+      }
+    }
+    visibility_config {
+      sampled_requests_enabled    = true
+      cloudwatch_metrics_enabled  = true
+      metric_name                 = "blockLog4j2Exploit"
     }
   }
 
