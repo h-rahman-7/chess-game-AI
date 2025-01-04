@@ -5,6 +5,7 @@ resource "aws_lb" "cg_app_lb" {
   load_balancer_type = "application"
   security_groups    = [var.security_group_id]
   subnets            = var.subnet_ids
+  drop_invalid_header_fields = true
 
   enable_deletion_protection = false
 
