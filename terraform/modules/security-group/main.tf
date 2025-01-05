@@ -5,15 +5,6 @@ resource "aws_security_group" "cg_sg" {
   name = var.sg_name
   vpc_id = var.vpc_id
 
-# Allowing unrestricted access to port 80 (HTTP) is flagged as insecure. Modern best practices enforce HTTPS (port 443) instead of HTTP.
-  # ingress {
-  #   from_port   = 80
-  #   to_port     = 80
-  #   protocol    = "tcp"
-  #   cidr_blocks = ["0.0.0.0/0"]  # Allows HTTP from anywhere
-  #   description = "Allow public HTTP traffic"
-  # }
-
 # Allowing HTTPS traffic on port 443 
   ingress {
     from_port   = 443
@@ -45,3 +36,12 @@ resource "aws_security_group" "cg_sg" {
     Name = var.sg_name
   }
 }
+
+# Allowing unrestricted access to port 80 (HTTP) is flagged as insecure. Modern best practices enforce HTTPS (port 443) instead of HTTP.
+  # ingress {
+  #   from_port   = 80
+  #   to_port     = 80
+  #   protocol    = "tcp"
+  #   cidr_blocks = ["0.0.0.0/0"]  # Allows HTTP from anywhere
+  #   description = "Allow public HTTP traffic"
+  # }
