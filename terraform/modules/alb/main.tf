@@ -6,7 +6,7 @@ resource "aws_lb" "cg_app_lb" {
   security_groups    = [var.security_group_id]
   subnets            = var.subnet_ids
   drop_invalid_header_fields = true
-
+  # checkov:skip=CKV_AWS_150 Reason: Delteion protection is disabled for terrafom destroy
   enable_deletion_protection = false
 
   tags = {
@@ -22,11 +22,20 @@ resource "aws_lb" "cg_app_lb" {
 
 ## My ALB target group
 resource "aws_lb_target_group" "cg_app_lb_tg" {
-  name        = var.target_group_name
-  target_type = "ip"
-  port        = 3002
+  name        = "target-group-1"
+  port        = 80
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
+
+  health_check {
+    protocol           = "HTTP"          # Use HTTP for health checks
+    path               = "/"             # Path to check, e.g., root path
+    interval           = 30              # Time between health checks (in seconds)
+    timeout            = 5               # Timeout for each health check
+    healthy_threshold  = 3               # Number of successes before considering the target healthy
+    unhealthy_threshold = 2              # Number of failures before considering the target unhealthy
+    matcher            = "200"           # Expect HTTP 200 response for a successful check
+  }
 }
 
 ## My ALB listener for HTTP redirecting to port 443

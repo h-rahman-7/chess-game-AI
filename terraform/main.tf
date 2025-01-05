@@ -116,7 +116,7 @@ module "ecs" {
 
   create_iam_role    = false
   execution_role_arn = "arn:aws:iam::713881828888:role/ecs-task-execution-role"
-  task_role_arn      = "arn:aws:iam::713881828888:role/ecs-task-execution-role"
+  task_role_arn      = "arn:aws:iam::713881828888:role/task-role"
   iam_role_name      = "ecsTaskExecutionRole"
 }
 
