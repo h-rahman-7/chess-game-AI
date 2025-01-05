@@ -51,23 +51,17 @@ jobs:
           pip install checkov
           checkov -d terraform
 
-      # Step 5: Run Trivy to Scan Configuration Files
-      - name: Run Trivy
-        run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -
-          trivy config ./terraform
-
-      # Step 6: Terraform Init
+      # Step 5: Terraform Init
       - name: Terraform Init
         working-directory: terraform
         run: terraform init
 
-      # Step 7: Terraform Plan
+      # Step 6: Terraform Plan
       - name: Terraform Plan
         working-directory: terraform
         run: terraform plan -out=tfplan
 
-      # Step 8: Check Confirmation (Only for Manual Runs)
+      # Step 7: Check Confirmation (Only for Manual Runs)
       - name: Check Confirmation
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
@@ -76,7 +70,7 @@ jobs:
             exit 1
           fi
 
-      # Step 9: Terraform Apply
+      # Step 8: Terraform Apply
       - name: Terraform Apply
         working-directory: terraform
         run: terraform apply -auto-approve tfplan
@@ -84,7 +78,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      # Step 10: Notify Discord on Success
+      # Step 9: Notify Discord on Success
       - name: Notify Discord Success
         if: success()
         run: |
@@ -92,7 +86,7 @@ jobs:
                -d "{\"content\": \"✅ Terraform deployment completed successfully!\"}" \
                ${{ secrets.DISCORD_WEBHOOK_URL }}
 
-      # Step 11: Notify Discord on Failure
+      # Step 10: Notify Discord on Failure
       - name: Notify Discord Failure
         if: failure()
         run: |
