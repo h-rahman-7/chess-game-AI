@@ -12,6 +12,7 @@ resource "aws_security_group" "cg_sg" {
   #   description = "Allow public HTTP traffic"
   # }
 
+# Allowing HTTPS traffic on port 443 
   ingress {
     from_port   = 443
     to_port     = 443
@@ -20,13 +21,13 @@ resource "aws_security_group" "cg_sg" {
     description = "Allow public HTTPS traffic"
   }
 
- # Allow public ECS container traffic (if required)
+ # ECS container security group rule
   ingress {
     from_port   = 3002           # Forwarding requests to ECS container
     to_port     = 3002
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # Allow ECS container traffic from anywhere
-    description = "Allow public ECS traffic"  
+    cidr_blocks = ["10.0.1.0/24", "10.0.2.0/24"] # Allow traffic only from the ALB
+    description = "Allow ECS traffic from ALB subnets"
   }
 
  # Allow all outbound traffic

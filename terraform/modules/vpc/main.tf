@@ -13,7 +13,7 @@ resource "aws_subnet" "cg_public_sn" {
   count                   = length(var.public_subnet_cidrs)
   vpc_id                  = aws_vpc.cg_vpc.id                        # Attach this public subnet to your VPC
   cidr_block              = var.public_subnet_cidrs[count.index]     # A smaller range of IPs (256 addresses 2^8) for public use
-  map_public_ip_on_launch = true                                     # Public IPs for resources in this subnet
+  map_public_ip_on_launch = false                                    # No Public IPs for resources in this subnet
   availability_zone       = var.availability_zones[count.index]      # Place this subnet in a specific AWS data center
   tags = {
     Name = "${var.vpc_name}-public-${count.index + 1}"               # Name the subnet
