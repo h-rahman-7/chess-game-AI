@@ -1,5 +1,6 @@
 ## My application security group
-# checkov:skip=CKV2_AWS_5 "Reason: Security group will be attached to resources later"
+
+# checkov:skip=CKV2_AWS_5 "Reason: Security group is already attached to ECS service via network configuration"
 resource "aws_security_group" "cg_sg" {
   name = var.sg_name
   vpc_id = var.vpc_id
