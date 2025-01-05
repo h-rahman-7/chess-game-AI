@@ -93,6 +93,10 @@ module "ecs" {
 
 # WAF Configuration
 # Existing KMS Key for Encryption
+# Declare the aws_caller_identity data resource
+data "aws_caller_identity" "current" {}
+
+# KMS Key Resource
 resource "aws_kms_key" "chess_app_key" {
   description             = "KMS key for the Chess App"
   enable_key_rotation     = true # Enable automatic key rotation
