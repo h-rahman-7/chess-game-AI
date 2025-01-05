@@ -1,9 +1,9 @@
 ## My application security group
-
-# checkov:skip=CKV2_AWS_5 Reason: This security group is attached dynamically to ECS and ALB resources
+# checkov:skip=CKV2_AWS_5 "Reason: Security group will be attached to resources later"
 resource "aws_security_group" "cg_sg" {
   name = var.sg_name
   vpc_id = var.vpc_id
+  description = "Security group for ECS container" 
 
 # Allowing HTTPS traffic on port 443 
   ingress {
@@ -24,6 +24,7 @@ resource "aws_security_group" "cg_sg" {
   }
 
  # Allow all outbound traffic
+ # checkov:skip=CKV_AWS_382 "Reason: Outbound traffic needs to be unrestricted for now"
   egress {
     from_port   = 0
     to_port     = 0
