@@ -18,35 +18,6 @@ resource "aws_flow_log" "vpc_flow_logs" {
   iam_role_arn           = aws_iam_role.flow_logs_role.arn
 }
 
-resource "aws_kms_key" "chess_app_key" {
-  description             = "KMS key for the Chess App"
-  enable_key_rotation     = true # Enable automatic key rotation
-  deletion_window_in_days = 30   # Optional, specifies the waiting period before deletion
-
-  policy = <<EOT
-{
-  "Version": "2012-10-17",
-  "Id": "key-default-1",
-  "Statement": [
-    {
-      "Sid": "Enable IAM User Permissions",
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
-      },
-      "Action": "kms:*",
-      "Resource": "*"
-    }
-  ]
-}
-EOT
-
-  tags = {
-    Name        = "chess-app-kms-key"
-    Environment = "production"
-  }
-}
-
 resource "aws_cloudwatch_log_group" "flow_logs" {
   name              = "/aws/vpc/flow-logs"
   kms_key_id = aws_kms_key.chess_app_key.id
@@ -121,10 +92,47 @@ module "ecs" {
 }
 
 # WAF Configuration
+# Existing KMS Key for Encryption
+resource "aws_kms_key" "chess_app_key" {
+  description             = "KMS key for the Chess App"
+  enable_key_rotation     = true # Enable automatic key rotation
+  deletion_window_in_days = 30   # Optional, specifies the waiting period before deletion
+
+  policy = <<EOT
+{
+  "Version": "2012-10-17",
+  "Id": "key-default-1",
+  "Statement": [
+    {
+      "Sid": "Enable IAM User Permissions",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+      },
+      "Action": "kms:*",
+      "Resource": "*"
+    }
+  ]
+}
+EOT
+
+  tags = {
+    Name        = "chess-app-kms-key"
+    Environment = "production"
+  }
+}
+
+# KMS Key Alias (Optional for readability and management)
+resource "aws_kms_alias" "chess_app_key_alias" {
+  name          = "alias/chess-app-kms-key"
+  target_key_id = aws_kms_key.chess_app_key.id
+}
+
 # CloudWatch Log Group for WAF Logs
 resource "aws_cloudwatch_log_group" "waf_log_group" {
   name              = "/aws/waf/cgai-waf-logs"
-  retention_in_days = 90
+  retention_in_days = 365 # Retain logs for at least 1 year
+  kms_key_id        = aws_kms_key.chess_app_key.arn # Use your existing KMS key for encryption
   tags = {
     Name = "cgai-waf-log-group"
   }
@@ -140,7 +148,7 @@ resource "aws_wafv2_web_acl" "cgai_waf" {
     allow {}
   }
 
-  # Block bad requests using the common rule set
+  # Block bad requests using common rule set
   rule {
     name     = "block-bad-requests"
     priority = 1
@@ -194,6 +202,22 @@ resource "aws_wafv2_web_acl_logging_configuration" "cgai_waf_logging" {
   log_destination_configs = [
     aws_cloudwatch_log_group.waf_log_group.arn
   ]
+
+logging_filter {
+  default_behavior = "KEEP"
+
+  filter {
+    behavior    = "KEEP"
+    requirement = "MEETS_ANY"
+
+    condition {
+      action_condition {
+        action = "BLOCK" # Log only blocked requests
+      }
+    }
+  }
+}
+
 }
 
 # Associate WAF with ALB
