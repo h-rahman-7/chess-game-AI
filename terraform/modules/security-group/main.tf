@@ -1,4 +1,6 @@
 ## My application security group
+
+# checkov:skip=CKV2_AWS_5 Reason: This security group is attached dynamically to ECS and ALB resources
 resource "aws_security_group" "cg_sg" {
   name = var.sg_name
   vpc_id = var.vpc_id

@@ -6,7 +6,7 @@ resource "aws_lb" "cg_app_lb" {
   security_groups    = [var.security_group_id]
   subnets            = var.subnet_ids
   drop_invalid_header_fields = true
-  # checkov:skip=CKV_AWS_150 Reason: Delteion protection is disabled for terrafom destroy
+  # checkov:skip=CKV_AWS_150 Reason: Deletion protection is disabled for Terraform destroy
   enable_deletion_protection = false
 
   tags = {

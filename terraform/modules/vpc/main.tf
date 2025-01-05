@@ -61,7 +61,12 @@ resource "aws_route_table_association" "cg_subnet_rt_assoc" {
 ## My ACM certificate
 resource "aws_acm_certificate" "cert" {
   domain_name       = "cgai.habibur-rahman.com"  
-  validation_method = "DNS"                      
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+                        
   tags = {
     Name = "ecs-cert"
   }

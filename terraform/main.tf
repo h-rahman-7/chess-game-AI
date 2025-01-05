@@ -121,6 +121,16 @@ module "ecs" {
 }
 
 # WAF Configuration
+# CloudWatch Log Group for WAF Logs
+resource "aws_cloudwatch_log_group" "waf_log_group" {
+  name              = "/aws/waf/cgai-waf-logs"
+  retention_in_days = 90
+  tags = {
+    Name = "cgai-waf-log-group"
+  }
+}
+
+# WAF Configuration
 resource "aws_wafv2_web_acl" "cgai_waf" {
   name        = "cgai-waf"
   scope       = "REGIONAL" # For ALB
@@ -130,7 +140,7 @@ resource "aws_wafv2_web_acl" "cgai_waf" {
     allow {}
   }
 
-  # Block bad requests using common rule set
+  # Block bad requests using the common rule set
   rule {
     name     = "block-bad-requests"
     priority = 1
@@ -175,6 +185,15 @@ resource "aws_wafv2_web_acl" "cgai_waf" {
     metric_name                = "webACL"
     sampled_requests_enabled   = true
   }
+}
+
+# Logging Configuration for WAF
+resource "aws_wafv2_web_acl_logging_configuration" "cgai_waf_logging" {
+  resource_arn = aws_wafv2_web_acl.cgai_waf.arn
+
+  log_destination_configs = [
+    aws_cloudwatch_log_group.waf_log_group.arn
+  ]
 }
 
 # Associate WAF with ALB
