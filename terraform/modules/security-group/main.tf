@@ -6,6 +6,15 @@ resource "aws_security_group" "cg_sg" {
   vpc_id = var.vpc_id
   description = "Security group for ECS container" 
 
+# # Allowing unrestricted access to port 80 (HTTP) is flagged as insecure. Modern best practices enforce HTTPS (port 443) instead of HTTP.
+#   ingress {
+#     from_port   = 80
+#     to_port     = 80
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]  # Allows HTTP from anywhere
+#     description = "Allow public HTTP traffic"
+#   }  
+
 # Allowing HTTPS traffic on port 443 
   ingress {
     from_port   = 443
@@ -17,12 +26,13 @@ resource "aws_security_group" "cg_sg" {
 
  # ECS container security group rule
   ingress {
-    from_port   = 3002           # Forwarding requests to ECS container
-    to_port     = 3002
-    protocol    = "tcp"
-    cidr_blocks = ["10.0.1.0/24", "10.0.2.0/24"] # Allow traffic only from the ALB
-    description = "Allow ECS traffic from ALB subnets"
-  }
+  from_port   = 3002
+  to_port     = 3002
+  protocol    = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]  # Allow ECS container traffic from anywhere
+  description = "Allow ECS traffic from anywhere"
+}
+
 
  # Allow all outbound traffic
  # checkov:skip=CKV_AWS_382 "Reason: Outbound traffic needs to be unrestricted for now"
@@ -39,11 +49,3 @@ resource "aws_security_group" "cg_sg" {
   }
 }
 
-# Allowing unrestricted access to port 80 (HTTP) is flagged as insecure. Modern best practices enforce HTTPS (port 443) instead of HTTP.
-  # ingress {
-  #   from_port   = 80
-  #   to_port     = 80
-  #   protocol    = "tcp"
-  #   cidr_blocks = ["0.0.0.0/0"]  # Allows HTTP from anywhere
-  #   description = "Allow public HTTP traffic"
-  # }

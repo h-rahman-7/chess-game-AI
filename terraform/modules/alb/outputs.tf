@@ -1,6 +1,6 @@
 output "alb_arn" {
   description = "The ARN of the Application Load Balancer"
-  value       = aws_lb.cg_app_lb.arn
+  value       = aws_lb.cg_app_lb.arn 
 }
 
 output "alb_url" {

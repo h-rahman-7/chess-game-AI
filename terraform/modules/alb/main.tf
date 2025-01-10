@@ -9,23 +9,25 @@ resource "aws_lb" "cg_app_lb" {
   # checkov:skip=CKV_AWS_150 "Reason: Deletion protection is disabled for Terraform destroy"
   enable_deletion_protection = false
 
+  # access_logs {
+  #   bucket  = "chess-game-terraform-state"
+  #   prefix  = "alb-logs"
+  #   enabled = true
+  # }
+
   tags = {
     Environment = "production"
   }
 
-  access_logs {
-    bucket  = "chess-game-terraform-state"
-    prefix  = "alb-logs"
-    enabled = true
-  }
 }
 
 ## My ALB target group
 resource "aws_lb_target_group" "cg_app_lb_tg" {
-  name        = "target-group-1"
-  port        = 80
+  name        = var.target_group_name
+  port        = 3002
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
+  target_type = "ip"
 
   health_check {
     protocol           = "HTTP"          # Use HTTP for health checks

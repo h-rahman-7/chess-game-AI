@@ -10,43 +10,6 @@ module "vpc" {
   availability_zones  = ["us-east-1a", "us-east-1b"]
 }
 
-resource "aws_flow_log" "vpc_flow_logs" {
-  vpc_id                 = module.vpc.vpc_id
-  traffic_type           = "ALL"
-  log_destination        = aws_cloudwatch_log_group.flow_logs.arn
-  log_destination_type   = "cloud-watch-logs"
-  iam_role_arn           = aws_iam_role.flow_logs_role.arn
-}
-
-resource "aws_cloudwatch_log_group" "flow_logs" {
-  name              = "/aws/vpc/flow-logs"
-  kms_key_id = aws_kms_key.chess_app_key.id
-  retention_in_days = 365
-}
-
-resource "aws_iam_role" "flow_logs_role" {
-  name = "vpc-flow-logs-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "vpc-flow-logs.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_policy_attachment" "flow_logs_policy" {
-  name       = "flow-logs-policy-attach"
-  roles      = [aws_iam_role.flow_logs_role.name]
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2FlowLogsRole"
-}
-
 # Security Group Module
 module "security_group" {
   source  = "./modules/security-group"
@@ -87,147 +50,17 @@ module "ecs" {
 
   create_iam_role    = false
   execution_role_arn = "arn:aws:iam::713881828888:role/ecs-task-execution-role"
-  task_role_arn      = "arn:aws:iam::713881828888:role/task-role"
+  task_role_arn      = "arn:aws:iam::713881828888:role/ecs-task-execution-role"
   iam_role_name      = "ecsTaskExecutionRole"
-}
 
-# WAF Configuration
-# Existing KMS Key for Encryption
-# Declare the aws_caller_identity data resource
-data "aws_caller_identity" "current" {}
-
-# KMS Key Resource
-resource "aws_kms_key" "chess_app_key" {
-  description             = "KMS key for the Chess App"
-  enable_key_rotation     = true # Enable automatic key rotation
-  deletion_window_in_days = 30   # Optional, specifies the waiting period before deletion
-
-  policy = <<EOT
-{
-  "Version": "2012-10-17",
-  "Id": "key-default-1",
-  "Statement": [
-    {
-      "Sid": "Enable IAM User Permissions",
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
-      },
-      "Action": "kms:*",
-      "Resource": "*"
-    }
-  ]
-}
-EOT
-
-  tags = {
-    Name        = "chess-app-kms-key"
-    Environment = "production"
-  }
-}
-
-# KMS Key Alias (Optional for readability and management)
-resource "aws_kms_alias" "chess_app_key_alias" {
-  name          = "alias/chess-app-kms-key"
-  target_key_id = aws_kms_key.chess_app_key.id
-}
-
-# CloudWatch Log Group for WAF Logs
-resource "aws_cloudwatch_log_group" "waf_log_group" {
-  name              = "/aws/waf/cgai-waf-logs"
-  retention_in_days = 365 # Retain logs for at least 1 year
-  kms_key_id        = aws_kms_key.chess_app_key.arn # Use your existing KMS key for encryption
-  tags = {
-    Name = "cgai-waf-log-group"
-  }
-}
-
-# WAF Configuration
-resource "aws_wafv2_web_acl" "cgai_waf" {
-  name        = "cgai-waf"
-  scope       = "REGIONAL" # For ALB
-  description = "WAF for ALB with Log4j2 protection"
-
-  default_action {
-    allow {}
-  }
-
-  # Block bad requests using common rule set
-  rule {
-    name     = "block-bad-requests"
-    priority = 1
-    action {
-      block {}
-    }
-    statement {
-      managed_rule_group_statement {
-        vendor_name = "AWS"
-        name        = "AWSManagedRulesCommonRuleSet"
-      }
-    }
-    visibility_config {
-      sampled_requests_enabled    = true
-      cloudwatch_metrics_enabled  = true
-      metric_name                 = "blockBadRequests"
-    }
-  }
-
-  # Add protection against Log4j2
-  rule {
-    name     = "block-log4j2-exploit"
-    priority = 2
-    action {
-      block {}
-    }
-    statement {
-      managed_rule_group_statement {
-        vendor_name = "AWS"
-        name        = "AWSManagedRulesKnownBadInputsRuleSet"
-      }
-    }
-    visibility_config {
-      sampled_requests_enabled    = true
-      cloudwatch_metrics_enabled  = true
-      metric_name                 = "blockLog4j2Exploit"
-    }
-  }
-
-  visibility_config {
-    cloudwatch_metrics_enabled = true
-    metric_name                = "webACL"
-    sampled_requests_enabled   = true
-  }
-}
-
-# Logging Configuration for WAF
-resource "aws_wafv2_web_acl_logging_configuration" "cgai_waf_logging" {
-  resource_arn = aws_wafv2_web_acl.cgai_waf.arn
-
-  log_destination_configs = [
-    aws_cloudwatch_log_group.waf_log_group.arn
-  ]
-
-logging_filter {
-  default_behavior = "KEEP"
-
-  filter {
-    behavior    = "KEEP"
-    requirement = "MEETS_ANY"
-
-    condition {
-      action_condition {
-        action = "BLOCK" # Log only blocked requests
-      }
-    }
-  }
-}
-
-}
-
-# Associate WAF with ALB
-resource "aws_wafv2_web_acl_association" "cgai_waf_association" {
-  resource_arn = module.alb.alb_arn # Replace with the ALB ARN output from your module
-  web_acl_arn  = aws_wafv2_web_acl.cgai_waf.arn
+  # log_configuration = {
+  #   logDriver = "awslogs"
+  #   options = {
+  #     awslogs-group         = "/ecs/chess-game"
+  #     awslogs-region        = "us-east-1"
+  #     awslogs-stream-prefix = "ecs"
+  #   }
+  # }
 }
 
 # Route53 Module
@@ -238,3 +71,195 @@ module "route53" {
   ttl         = 300
   alb_dns_name = module.alb.alb_dns_name
 }
+
+
+# # IAM Role for KMS Flow Logs
+# resource "aws_iam_role_policy" "flow_logs_kms_policy" {
+#   name = "flow-logs-kms-permissions"
+#   role = aws_iam_role.flow_logs_role.id
+
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect = "Allow"
+#         Action = [
+#           "kms:Encrypt",
+#           "kms:Decrypt",
+#           "kms:ReEncrypt*",
+#           "kms:GenerateDataKey*",
+#           "kms:DescribeKey"
+#         ]
+#         Resource = aws_kms_key.chess_app_key.arn
+#       }
+#     ]
+#   })
+# }
+
+# WAF Configuration
+# Existing KMS Key for Encryption
+# Declare the AWS Caller Identity
+# data "aws_caller_identity" "current" {}
+
+# # Declare the region variable
+# variable "region" {
+#   default = "us-east-1" # Replace with your desired AWS region
+# }
+
+# # KMS Key Resource
+# resource "aws_kms_key" "chess_app_key" {
+#   description             = "KMS key for the Chess App"
+#   enable_key_rotation     = true
+#   deletion_window_in_days = 30
+
+#   policy = <<EOT
+# {
+#   "Version": "2012-10-17",
+#   "Id": "key-default-1",
+#   "Statement": [
+#     {
+#       "Sid": "EnableIAMUserPermissions",
+#       "Effect": "Allow",
+#       "Principal": {
+#         "AWS": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+#       },
+#       "Action": "kms:*",
+#       "Resource": "*"
+#     },
+#     {
+#       "Sid": "AllowFlowLogs",
+#       "Effect": "Allow",
+#       "Principal": {
+#         "Service": "logs.${var.region}.amazonaws.com"
+#       },
+#       "Action": [
+#         "kms:Encrypt",
+#         "kms:Decrypt",
+#         "kms:ReEncrypt*",
+#         "kms:GenerateDataKey*",
+#         "kms:DescribeKey"
+#       ],
+#       "Resource": "*",
+#       "Condition": {
+#         "StringEquals": {
+#           "aws:SourceAccount": "${data.aws_caller_identity.current.account_id}"
+#         },
+#         "ArnLike": {
+#           "kms:EncryptionContext:aws:logs:arn": "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/vpc/flow-logs*"
+#         }
+#       }
+#     }
+#   ]
+# }
+# EOT
+
+#   tags = {
+#     Name        = "chess-app-kms-key"
+#     Environment = "production"
+#   }
+# }
+
+
+# # KMS Key Alias (Optional for readability and management)
+# resource "aws_kms_alias" "chess_app_key_alias" {
+#   name          = "alias/chess-app-kms-key"
+#   target_key_id = aws_kms_key.chess_app_key.id
+# }
+
+# # CloudWatch Log Group for WAF Logs
+# resource "aws_cloudwatch_log_group" "waf_log_group" {
+#   name              = "/aws/waf/cgai-waf-logs"
+#   retention_in_days = 365 # Retain logs for at least 1 year
+#   kms_key_id        = aws_kms_key.chess_app_key.id # Use your existing KMS key for encryption
+#   tags = {
+#     Name = "cgai-waf-log-group"
+#   }
+# }
+
+# # WAF Configuration
+# resource "aws_wafv2_web_acl" "cgai_waf" {
+#   name        = "cgai-waf"
+#   scope       = "REGIONAL" # For ALB
+#   description = "WAF for ALB with Log4j2 protection"
+
+#   default_action {
+#     allow {}
+#   }
+
+#   # Block bad requests using common rule set
+#   rule {
+#     name     = "block-bad-requests"
+#     priority = 1
+#     action {
+#       block {}
+#     }
+#     statement {
+#       managed_rule_group_statement {
+#         vendor_name = "AWS"
+#         name        = "AWSManagedRulesCommonRuleSet"
+#       }
+#     }
+#     visibility_config {
+#       sampled_requests_enabled    = true
+#       cloudwatch_metrics_enabled  = true
+#       metric_name                 = "blockBadRequests"
+#     }
+#   }
+
+#   # Add protection against Log4j2
+#   rule {
+#     name     = "block-log4j2-exploit"
+#     priority = 2
+#     action {
+#       block {}
+#     }
+#     statement {
+#       managed_rule_group_statement {
+#         vendor_name = "AWS"
+#         name        = "AWSManagedRulesKnownBadInputsRuleSet"
+#       }
+#     }
+#     visibility_config {
+#       sampled_requests_enabled    = true
+#       cloudwatch_metrics_enabled  = true
+#       metric_name                 = "blockLog4j2Exploit"
+#     }
+#   }
+
+#   visibility_config {
+#     cloudwatch_metrics_enabled = true
+#     metric_name                = "webACL"
+#     sampled_requests_enabled   = true
+#   }
+# }
+
+# # Logging Configuration for WAF
+# resource "aws_wafv2_web_acl_logging_configuration" "cgai_waf_logging" {
+#   resource_arn = aws_wafv2_web_acl.cgai_waf.arn
+
+#   log_destination_configs = [
+#     aws_cloudwatch_log_group.waf_log_group.arn
+#   ]
+
+# logging_filter {
+#   default_behavior = "KEEP"
+
+#   filter {
+#     behavior    = "KEEP"
+#     requirement = "MEETS_ANY"
+
+#     condition {
+#       action_condition {
+#         action = "BLOCK" # Log only blocked requests
+#       }
+#     }
+#   }
+# }
+
+# }
+
+# # Associate WAF with ALB
+# resource "aws_wafv2_web_acl_association" "cgai_waf_association" {
+#   resource_arn = module.alb.alb_arn # Replace with the ALB ARN output from your module
+#   web_acl_arn  = aws_wafv2_web_acl.cgai_waf.arn
+# }
